@@ -70,6 +70,56 @@ tr:nth-child(even){
   font-size:18px;
 }
 
+.raport-miesiac{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+}
+
+.raport-miesiac select{
+  background:#1a1a1a;
+  color:white;
+  padding:10px;
+  border-radius:6px;
+}
+
+.miesiac{
+  background:#1a1a1a;
+  cursor:pointer;
+  font-weight:bold;
+  text-align:left;
+}
+
+.miesiac:hover{
+  background:#2a2a2a;
+}
+
+
+#szukaj{
+  width:100%;
+  max-width:300px;
+  padding:10px;
+  background:#1a1a1a;
+  color:white;
+  border-radius:6px;
+  border:none;
+  margin-bottom:20px; /* 👈 TO DODAJ / ZWIĘKSZ */
+}
+
+#szukaj:focus{
+  outline:none;
+  box-shadow:0 0 10px rgba(255,0,0,0.4);
+}
+
+.tabela-wrapper{
+  width:100%;
+  overflow-x:auto;
+}
+
+table{
+  min-width:600px;
+}
+
 @media print{
 
   body{
@@ -98,6 +148,48 @@ tr:nth-child(even){
     color:black;
   }
 
+.panel{
+  margin-top:30px;
+  padding:20px;
+  background:#151515;
+  border-radius:10px;
+  box-shadow:0 0 12px rgba(0,0,0,0.6);
+}
+
+.panel h3{
+  text-align:center;
+  margin-bottom:15px;
+  color:#4da3ff;
+}
+
+.panel-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.panel button,
+.import-btn{
+  padding:12px;
+  background:#1e2a38;
+  color:#d6e4ff;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  text-align:center;
+  transition:0.2s;
+}
+
+.panel button:hover,
+.import-btn:hover{
+  background:#2f4a70;
+  transform:scale(1.03);
+}
+
+.import-btn input{
+  display:none;
+}
+
 }
 </style>
 </head>
@@ -114,25 +206,15 @@ tr:nth-child(even){
   <button onclick="dodaj()">Dodaj</button>
 </div>
 
-<select id="miesiac">
-  <option value="">-- wybierz miesiąc --</option>
-  <option value="01">Styczeń</option>
-  <option value="02">Luty</option>
-  <option value="03">Marzec</option>
-  <option value="04">Kwiecień</option>
-  <option value="05">Maj</option>
-  <option value="06">Czerwiec</option>
-  <option value="07">Lipiec</option>
-  <option value="08">Sierpień</option>
-  <option value="09">Wrzesień</option>
-  <option value="10">Październik</option>
-  <option value="11">Listopad</option>
-  <option value="12">Grudzień</option>
+
+<select id="sortowanie" onchange="render()">
+  <option value="desc">Najnowsze</option>
+  <option value="asc">Najstarsze</option>
 </select>
 
-<button onclick="drukujMiesiac()">📄 Raport miesięczny</button>
-<button onclick="drukujRok()">📊 Raport roczny</button>
+<input type="text" id="szukaj" placeholder="🔍 Szukaj..." oninput="render()">
 
+<div class="tabela-wrapper"></div>
 <table>
   <thead>
     <tr>
@@ -145,12 +227,42 @@ tr:nth-child(even){
   </thead>
   <tbody id="tabela"></tbody>
 </table>
+</div>
 
-<div class="summary" id="podsumowanie"></div>
+<div class="panel">
+  <h3>📊 Raporty i dane</h3>
 
-<button onclick="eksport()">💾 Eksport</button>
-<input type="file" onchange="importuj(event)">
+<div class="raport-miesiac">
+  <select id="miesiac">
+    <option value="">-- wybierz miesiąc --</option>
+    <option value="01">Styczeń</option>
+    <option value="02">Luty</option>
+    <option value="03">Marzec</option>
+    <option value="04">Kwiecień</option>
+    <option value="05">Maj</option>
+    <option value="06">Czerwiec</option>
+    <option value="07">Lipiec</option>
+    <option value="08">Sierpień</option>
+    <option value="09">Wrzesień</option>
+    <option value="10">Październik</option>
+    <option value="11">Listopad</option>
+    <option value="12">Grudzień</option>
+  </select>
 
+  
+</div>
+
+  <div class="panel-grid">
+    <button onclick="drukujMiesiac()">📄 Raport miesięczny</button>
+    <button onclick="drukujRok()">📊 Raport roczny</button>
+    <button onclick="eksport()">💾 Eksport danych</button>
+
+    <label class="import-btn">
+      📥 Import danych
+      <input type="file" onchange="importuj(event)">
+    </label>
+  </div>
+</div>
 
 <script>
 let dane = JSON.parse(localStorage.getItem("rozliczenia")) || [];
@@ -160,28 +272,73 @@ function zapisz(){
 }
 
 function render(){
+
+  const tryb = document.getElementById("sortowanie")?.value || "desc";
+
+if(tryb === "desc"){
+  dane.sort((a, b) => new Date(b.data) - new Date(a.data));
+}else{
+  dane.sort((a, b) => new Date(a.data) - new Date(b.data));
+}
+
   const tabela = document.getElementById("tabela");
   tabela.innerHTML = "";
+
+  const miesiace = {
+    "01":"Styczeń","02":"Luty","03":"Marzec","04":"Kwiecień",
+    "05":"Maj","06":"Czerwiec","07":"Lipiec","08":"Sierpień",
+    "09":"Wrzesień","10":"Październik","11":"Listopad","12":"Grudzień"
+  };
 
   let sumaPrzychod = 0;
   let sumaKoszt = 0;
 
-  dane.forEach((item, index) => {
-    sumaPrzychod += Number(item.przychod);
-    sumaKoszt += Number(item.koszt);
+  // grupowanie po miesiącach
+  let grupy = {};
+
+const szukane = document.getElementById("szukaj")?.value.toLowerCase() || "";
+
+dane.forEach((item, index) => {
+
+  const tekst = (item.opis + " " + item.data).toLowerCase();
+
+  if(!tekst.includes(szukane)) return;
+
+  const miesiac = item.data.split("-")[1];
+
+  if(!grupy[miesiac]){
+    grupy[miesiac] = [];
+  }
+
+  grupy[miesiac].push({ ...item, index });
+
+  sumaPrzychod += Number(item.przychod);
+  sumaKoszt += Number(item.koszt);
+});
+
+  // sortowanie miesięcy
+  Object.keys(grupy).sort().forEach(miesiac => {
 
     tabela.innerHTML += `
-      <tr>
-        <td>${item.data}</td>
-        <td>${item.opis}</td>
-        <td>${item.przychod}</td>
-        <td>${item.koszt}</td>
-        <td>
-          <button onclick="edytuj(${index})">✏️</button>
-          <button onclick="usun(${index})">🗑️</button>
-        </td>
+      <tr class="miesiac" onclick="toggle('${miesiac}')">
+        <td colspan="5">📅 ${miesiace[miesiac]}</td>
       </tr>
     `;
+
+    grupy[miesiac].forEach(item => {
+      tabela.innerHTML += `
+        <tr class="miesiac-${miesiac}">
+          <td>${item.data}</td>
+          <td>${item.opis}</td>
+          <td>${item.przychod}</td>
+          <td>${item.koszt}</td>
+          <td>
+            <button onclick="edytuj(${item.index})">✏️</button>
+            <button onclick="usun(${item.index})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    });
   });
 
   document.getElementById("podsumowanie").innerHTML = `
@@ -189,6 +346,21 @@ function render(){
     Koszty: ${sumaKoszt} zł |
     Dochód: ${sumaPrzychod - sumaKoszt} zł
   `;
+}
+
+function toggle(miesiac){
+  const rows = document.querySelectorAll(`.miesiac-${miesiac}`);
+
+  rows.forEach(row => {
+    row.style.display = row.style.display === "none" ? "" : "none";
+  });
+}
+
+function wyczyscFormularz(){
+  document.getElementById("data").value = "";
+  document.getElementById("opis").value = "";
+  document.getElementById("przychod").value = "";
+  document.getElementById("koszt").value = "";
 }
 
 function usun(index){
@@ -200,6 +372,9 @@ function usun(index){
 }
 
 function edytuj(index){
+
+  wyczyscFormularz();
+
   const item = dane[index];
 
   document.getElementById("data").value = item.data;
@@ -225,8 +400,9 @@ function dodaj(){
 
   dane.push({ data, opis, przychod, koszt });
 
-  zapisz();
-  render();
+wyczyscFormularz();
+zapisz();
+render();
 
   document.getElementById("data").value = "";
   document.getElementById("opis").value = "";
@@ -431,6 +607,9 @@ function drukujRok(){
   win.document.title = `Raport_roczny_${rok}`;
 
   win.print();
+
+
+  
 }
 
 </script>
