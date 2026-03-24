@@ -6,8 +6,8 @@
 
 <style>
 body{
-  background:#0a0a0a;
-  color:#d6d6d6;
+  background:#0f0f0f;
+  color:#dfd1d1b0;
   font-family:Arial;
   padding:20px;
 }
@@ -36,7 +36,7 @@ input{
 }
 
 button{
-  background:#8b0000;
+  background:#a33400;
   color:white;
   cursor:pointer;
 }
@@ -57,7 +57,7 @@ th, td{
 }
 
 th{
-  background:#8b0000;
+  background:#030169;
 }
 
 tr:nth-child(even){
@@ -150,7 +150,7 @@ tr:nth-child(even){
 
 <button onclick="eksport()">💾 Eksport</button>
 <input type="file" onchange="importuj(event)">
-<button onclick="drukuj()">🖨️ Drukuj</button>
+
 
 <script>
 let dane = JSON.parse(localStorage.getItem("rozliczenia")) || [];
